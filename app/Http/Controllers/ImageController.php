@@ -10,6 +10,7 @@ use App\Http\Requests\SharedImageRequest;
 use App\Models\User;
 use App\Models\Image;
 use App\Jobs\SendEmailJob;
+use Illuminate\Support\Facades\Storage;
 class ImageController extends Controller
 {
     public function uploadImage(UploadImageRequest $request){
@@ -115,6 +116,8 @@ class ImageController extends Controller
             $userData = $request->data;
             $userInput = $request->validated();
             Image::where('user_id', $userData->id)->where('picture',$userInput['picture'])->delete();
+            //unlink($image_path);
+            Storage::delete($userInput['picture']);
             return response()->success("Image deleted successfully!",200);
 
         }catch(\Exception $ex){
@@ -126,7 +129,7 @@ class ImageController extends Controller
     public function filterImages(Request $request){
         try{
             $userData = $request->data;
-            $data['imgUrl'] = url('/storage/uploads');            
+            $data['imgUrl'] = url('/storage/uploads');
             $data['image'] = Image::where('user_id', $userData->id)->where('picture', 'like', '%' . $request->filter . '%')->orwhere('created_at', 'like', '%' . $request->filter . '%')->get('picture');
           return response()->success($data,200);
 
@@ -141,24 +144,24 @@ class ImageController extends Controller
             $userData = $request->data;
             $userInput = $request->validated();
             $image =Image::find($userInput['image_id']);
-            
+
             if($image['visible']=="private" || $image['visible']=="public"){
                 $email_arr = explode (",",  $image['shared_email']);
 
                 if(in_array($userInput['shared_email'], $email_arr)){
-                    return response()->success("Already shared!.",400); 
+                    return response()->success("Already shared!.",400);
                 }
-               
+
                 $emails = $image['shared_email'].$userInput['shared_email'].",";
                 $image->shared_email = $emails;
                 $image->save();
-               
+
                 //send email
                 $link = url('image/viewSharedImage/'.$image->id);
                 ImageController::sendImageLink($userInput['shared_email'],$userData->name, $link);
-                return response()->success("$link",200);  
+                return response()->success("$link",200);
             }else{
-                return response()->success("It's not share able!",400); 
+                return response()->success("It's not share able!",400);
             }
         }catch(\Exception $ex){
             return response()->error($ex->getMessage(),400);
@@ -183,7 +186,7 @@ class ImageController extends Controller
         try{
             $email = $request->email;
            // $userData = $request->image_name;
-            $data['imgUrl'] = url('/storage/uploads');            
+            $data['imgUrl'] = url('/storage/uploads');
             $data['image'] = $request->image_name;
           return response()->success($data,200);
         } catch (\Exception $ex) {

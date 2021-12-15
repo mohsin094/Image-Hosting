@@ -30,8 +30,9 @@ class UserController extends Controller
                 
                 $imageName=time().'.'.$ext[1];
                 $img = preg_replace('/^data:image\/\w+;base64,/', '', $userInput['picture']);
-                $path=storage_path('app\\public\\profile').'\\'.$imageName;
-                file_put_contents($path,base64_decode($img));
+                $path=storage_path('app\\public\\uploads').'\\'.$imageName;
+              //  $path = asset('app\\public\\uploads'.$imageName);
+               file_put_contents($path,base64_decode($img));
 
                 $user->picture = $imageName;
                 $user->save();
@@ -74,8 +75,13 @@ class UserController extends Controller
 
                 if ($user = Auth::attempt(['email' => $userInput['email'], 'password' => $userInput['password']])) {
                     $user = auth()->user();
-                    $profilePicture= url('/storage/profile/'.$user->picture);
+                   // $profilePicture = url(public_path().'/'.$user->picture);
+                   // $profilePicture= url('/storage/profile/'.$user->picture);
+                  // $url = asset('images/arrow.gif'); # http://example.com/assets/images/arrow.gif
+                    $profilePicture = asset('storage/uploads/'.$user->picture); # https://example.com/assets/images/arrow.gif
+                    
 
+                    
                     if (User::where('id', $user->id)->value('verified') == 1) {
                         $dataArray = [
                             "id" => $user->id,
